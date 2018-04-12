@@ -1,0 +1,39 @@
+
+
+\begin{tikzpicture}[ %
+	grow via three points={
+		one child at (0.5,-0.55) and two children at (0.5,-0.55) and (0.5,-1.1)
+	},
+ 	edge from parent path={(\tikzparentnode.south) |- (\tikzchildnode.west)},
+	every node/.style={anchor=west, font=\footnotesize},
+	template/.style={font=\bf\footnotesize}
+]
+
+\node[template] (root) {layout\_general.html}
+	child {node[template] {layout\_create.html}
+		child {node {fpgas/create.html}}
+		child {node {\dots}}
+	}
+    child [missing] {}	
+    child [missing] {}
+	child {node[template] {layout\_delete.html}
+				child {node {fpgas/delete.html}}
+				child {node {\dots}}
+	}
+	child [missing] {}	
+	child [missing] {}	
+	child {node[template, gray] (list) {layout\_list.html}}
+	child {node[template, gray] (show){layout\_show.html}}
+	child {node[]{welcome.html}}
+	child {node[]{registration/login.html}}
+	child {node[]{registration/logged\_out.html}}
+;
+
+\node[right = 6 em of root, align = left] (css){css/layout.css};
+\path[-](css) edge (root);
+
+\node[gray, right = 2 em of list](wip){WIP};
+\draw[->, gray] (wip) -- (list);
+\path[->, gray] (wip.south) edge[bend left = 20] (show.east);
+
+\end{tikzpicture}

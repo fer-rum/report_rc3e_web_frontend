@@ -1,0 +1,79 @@
+\begin{tikzpicture}[
+	every node/.style={draw, align=center, font=\tiny},
+]
+
+	\node[gray](fpga){
+		\textbf{\color{blue}{
+			fpga
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			node &: node \\
+			fpga\_model &: fpga\_model \\
+			node\_pci &: pci\_address \\
+			device\_pci &: pci\_address
+		\end{tabular}
+	};
+
+	\node[gray, right= 1 em of fpga](fpga_model){
+		\textbf{\color{blue}{
+			fpga\_model
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			producer &: producer \\
+			designation &: \emph{character[255]} \\
+			region\_type &: region\_type\\
+			region\_count &: \emph{integer}
+		\end{tabular}
+	};
+
+	\node[below = of fpga](device_variable){
+		\textbf{\color{blue}{
+			device\_variable
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			fpga &: fpga \\
+			name &: \emph{character[255]} \\
+			value &: \emph{text\_field} \\
+		\end{tabular}
+	};
+
+	\node[below = of fpga_model](script){
+		\textbf{\color{blue}{
+			script
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			programmer &: programmer \\
+			fpga\_model &: fpga\_model \\
+			template &: \emph{text\_field} \\
+		\end{tabular}
+	};
+
+	\node[below = of script](runtime_variable){
+		\textbf{\color{blue}{
+			runtime\_variable
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			name &: \emph{character[255]} \\
+			value &: \emph{text\_field} \\
+		\end{tabular}
+	};
+
+	\node[right = 1em of script](programmer){
+		\textbf{\color{blue}{
+			programmer
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			name &: \emph{character[255]} \\
+			device\_file\_path &: \emph{file\_path} \\
+		\end{tabular}
+	};
+
+\draw[gray] (fpga) -- (fpga_model);
+\draw (fpga) -- (device_variable);
+\draw [dashed] (device_variable) -- (script);
+\draw [dashed] (runtime_variable) -- (script);
+\draw (script) -- (programmer);
+\draw (script) -- (fpga_model);
+
+
+\end{tikzpicture}

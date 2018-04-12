@@ -1,0 +1,91 @@
+\begin{tikzpicture}[
+	every node/.style={draw, align=center, font=\tiny},
+]
+
+	\node[](fpga){
+		\textbf{\color{blue}{
+			fpga
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			node &: node \\
+			fpga\_model &: fpga\_model \\
+			node\_pci &: pci\_address \\
+			device\_pci &: pci\_address
+		\end{tabular}
+	};
+
+	\node[above= 1em of fpga](pci_address){
+		\textbf{\color{blue}{
+			pci\_address
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			system &: \emph{character[4]} \\
+			bus &: \emph{character[2]} \\
+			device &: \emph{character[2]} \\
+			function &: \emph{character[1]} \\
+		\end{tabular}
+	};
+
+	\node[left=1 em of fpga](node){
+		\textbf{\color{blue}{
+			node
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			name &: \emph{character[255]} \\
+			ip\_address &: \emph{generic\_ip\_address} \\
+			comment &: \emph{text\_field}
+		\end{tabular}
+	};
+
+	\node[right= 1 em of fpga](fpga_model){
+		\textbf{\color{blue}{
+			fpga\_model
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			producer &: producer \\
+			designation &: \emph{character[255]} \\
+			region\_type &: region\_type\\
+			region\_count &: \emph{integer}
+		\end{tabular}
+	};
+
+	\node[below= 1em of fpga](region){
+		\textbf{\color{blue}{
+			region
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			in\_fpga &: fpga \\
+			memory\_device\_path &: \emph{file\_path} \\
+			region\_type &: region\_type\\
+			index &: \emph{integer}
+		\end{tabular}
+	};
+
+	\node[right= 1 em of region](region_type){
+		\textbf{\color{blue}{
+			region\_type
+			}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			lut\_count &: \emph{integer} \\
+			dsp\_count &: \emph{integer} \\
+			register\_count &: \emph{integer} \\
+			blockram\_size &: \emph{integer} \\
+		\end{tabular}
+	};
+
+	\node[above= 1em of fpga_model](producer){
+		\textbf{\color{blue}{producer}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			name &: \emph{character[255]} \\
+		\end{tabular}
+	};
+
+\draw (fpga) -- (pci_address);
+\draw (fpga) -- (region);
+\draw (fpga) -- (node);
+\draw (fpga) -- (fpga_model);
+\draw (region) -- (region_type);
+\draw (region_type) -- (fpga_model);
+\draw (fpga_model) -- (producer);
+
+\end{tikzpicture}

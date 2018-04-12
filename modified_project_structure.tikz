@@ -1,0 +1,42 @@
+
+\begin{tikzpicture}[ %
+	grow via three points={
+		one child at (1,-0.6) and two children at (1,-0.6) and (1,-1.2)
+	},
+ 	edge from parent path={(\tikzparentnode.south) |- (\tikzchildnode.west)},
+	every node/.style={font=\footnotesize},
+	>={Triangle[]}
+]
+
+\node[draw] (root) {rc3e\_manager}
+	child {node {\dots}}
+	child {node[draw] {backend}
+		child {node(model) {models}}
+	}
+	child [missing] {}	
+	child {node[draw] (rest){rest\_api}
+		child {node {serializers}}
+		child {node[blue](v1) {views}}
+	}
+	child [missing] {}
+	child [missing] {}
+	child {node[draw] (web){web\_api}
+		child {node (forms){forms}}
+		child {node {templates}}
+		child {node[blue](v2) {views}}
+	}
+;
+
+\path[->,gray] (model.south east) edge[in=0, out=-45] (rest.east);
+\path[->, gray] (model.south east) edge[in = 0, out = -45] node[right]{import} (web.east);
+
+\node[left=of v1](anchor_v1){};
+\node[left=of v2](anchor_v2){};
+
+\node[blue, align = left, left= 4em of forms](txt){Same name,\\Different stuff};
+\path[->, dashed, blue] (txt) edge[bend left = 30] (anchor_v1.west);
+\path[->, dashed, blue] (txt) edge[bend right = 30] (anchor_v2.west);
+
+\node[blue, draw, left= 0.5 em of txt]{!};
+
+\end{tikzpicture}

@@ -1,0 +1,47 @@
+\begin{tikzpicture}[
+	every node/.style={draw, align=center, font=\tiny},
+]
+
+	\node[](region_reservation){
+		\textbf{\color{blue}{
+			region\_reservation
+			}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			region &: region \\
+			reserved\_by &: reservation \\
+		\end{tabular}
+	};
+
+	\node[gray, above = 1 em of region_reservation](region){
+		\textbf{\color{blue}{
+			region
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			in\_fpga &: fpga \\
+			memory\_device\_path &: \emph{file\_path} \\
+			region\_type &: region\_type\\
+			index &: \emph{integer}
+		\end{tabular}
+	};
+
+	\node[right =1 em of region_reservation](reservation){
+		\textbf{\color{blue}{
+			reservation
+		}}\\
+		\begin{tabular}{l@{\hskip 1em}l}
+			by\_user &: \emph{django.auth\_user} \\
+			creation\_date &: \emph{datetime} \\
+			start\_date &: \emph{datetime} \\
+			end\_date &: \emph{datetime} \\
+		\end{tabular}
+	};
+
+\node [draw = none, red, below =of region_reservation](note){Formerly known as \textbf{vfpga}};
+
+\draw (region) -- (region_reservation);
+\draw (region_reservation) -- (reservation);
+
+\path[->, red] (note) edge[out = 0, in = 270] (reservation);
+
+
+\end{tikzpicture}

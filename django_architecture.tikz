@@ -1,0 +1,84 @@
+
+%\usetikzlibrary{positioning}
+%\usetikzlibrary{calc}
+%\usetikzlibrary{arrows.meta}
+
+\begin{tikzpicture}[
+	scale=0.5, 
+	every node/.style={transform shape},
+	%
+	% --- Regular Styles ---
+	%
+	regular/.style = {draw=black, align=center, thick},
+	regular_wide/.style = {draw=black, align=center, minimum width=8em, minimum height = 3 em, thick},
+	regular_high/.style = {draw=black, align=center, minimum width = 5em, minimum height=6em, thick},
+	%
+	% --- Shaded Styles ---
+	%
+	shaded/.style = {draw=gray, color=gray, align=center},
+	shaded_high/.style = {draw=gray, color=gray, align=center, minimum width = 5em, minimum height=6em},
+	%
+	% --- Arrow Styles ---
+	%
+	better_arrow/.style = {->, -Latex}
+]
+
+	\node (_anchor_){};
+
+	\node [regular, left = 6em of _anchor_] 
+		(browser) {Browser};
+
+	\node [regular_wide, above  = 3em of _anchor_] 
+		(dispatcher) {URL Dispatcher};
+
+	\node [regular_wide, below = 3em of _anchor_] 
+		(template) {HTML Template \\ Rendering Engine};
+
+	\node [regular_high, right = 4em of _anchor_]
+		(view) {View};
+
+	\node [regular_high, right = of view]
+		(model){Model};
+
+	\node [shaded_high, right = of model]
+		(db_connector){Database \\ Connector};
+
+	\node [regular_high, right = of db_connector]
+		(db_backend){\texttt{MySQL} \\ Database \\ Backend}; 
+
+	\draw[shaded] let 
+		\p1 = (dispatcher.west),
+		\p2 = (db_connector.east),
+		\p3 = ($ (dispatcher.north) + (0em, 1em) $),
+		\p4 = ($ (dispatcher.north) + (0em, 3em) $)
+	in
+	 (\x1, \y3) rectangle (\x2, \y4) node[pos=.5] {\texttt{Django} Controller};
+
+	\coordinate (shift_up) at (0 em, 1.5 em);
+	\coordinate (shift_down) at (0 em, -1.5 em);
+
+	\path[better_arrow](browser) edge [out = north, in = west] (dispatcher);
+	\path[better_arrow](dispatcher) edge [out = east, in = north] (view);
+
+	\path[better_arrow]($ (view.east) + (shift_up) $) edge ($ (model.west)  +  (shift_up) $);
+	\path[better_arrow]($ (model.east) + (shift_up) $) edge ($ (db_backend.west)  +  (shift_up) $);
+
+	\path[better_arrow]($ (db_backend.west) + (shift_down) $) edge ($ (model.east)  +  (shift_down) $);
+	\path[better_arrow]($ (model.west) + (shift_down) $) edge ($ (view.east)  +  (shift_down) $);
+
+	\path[better_arrow](view) edge[out=south, in = east] (template);
+	\path[better_arrow](template) edge [out = west, in = south] (browser);
+
+	\draw[dashed] let 
+		\p1 = (template.south),
+		\p2 = (db_connector.east)
+	in
+	($ (dispatcher.north west) + (-1em, 4em) $) rectangle ($ (\x2, \y1) + (1em, -1em) $);
+
+	\draw let 
+		\p1 = ($ 0.5*(template.west) + 0.5*(db_connector.east) $),
+		\p2 = (template.south)
+	in
+	 (\x1, \y2) node{Web Server};
+
+\end{tikzpicture}
