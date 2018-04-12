@@ -1,0 +1,472 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\input{tikz-config}
+
+\usepackage{tikzscale}
+\usepackage{graphicx}
+\usepackage{listings}
+
+\usetheme[pagenum, beamerfont]{tud}
+
+\AtBeginSection{\frame{\sectionpage}}
+
+\newcommand{\rccce}{\texttt{RC3E}}
+\newcommand{\django}{\texttt{Django}}
+
+\title{Design and Implementaion of a Web-Based \rccce{} User Frontend}
+\subtitle{Status Report}
+\author{Fredo Erxleben}
+\date{\today}
+\institute{Chair for VLSI Design, Diagnostics and Architecture}
+
+\lstdefinestyle{http}{
+  emptylines=1,
+  breaklines=true,
+  basicstyle=\tiny\ttfamily\color{black},
+  moredelim=**[is][\color{blue}]{@}{@},
+  moredelim=**[is][\color{gray}]{@!}{!@},
+}
+
+\begin{document}
+
+\maketitle
+
+    \begin{frame}{Contents of this Talk}
+        \tableofcontents
+    \end{frame}
+
+
+\section{Introduction}
+\subsection{\rccce{}}
+
+    \begin{frame}{The Core Issue}
+        \rccce{} (
+            \textbf{R}econfigurable 
+            \textbf{C}ommon 
+            \textbf{C}loud 
+            \textbf{C}omputing 
+            \textbf{E}nvironment
+        ) \\
+        \begin{itemize}
+            \item System for distribution of FPGA ressources to remote users
+            \item Actual ressources get abstracted as virtual FPGAs
+            \item Controlled by a human administrator, who\dots
+            \begin{itemize}
+                \item \dots runs selected scripts on the host
+                \item \dots manages users by hand
+                \item \dots has to schedule ressources
+                \item \dots does the programming of vFPGAs and relays the results
+            \end{itemize}
+        \end{itemize}
+
+        \begin{block}{Project Aim}
+            Create a web-frontend that can automatize these tasks.
+        \end{block}
+    \end{frame}
+
+\subsection{\django{}}
+
+    \begin{frame}{What is \django?}
+        \begin{itemize}
+            \item \texttt{Python}-based framework for web applications
+            \item Architecture is \textbf{M}odel \textbf{T}emplate \textbf{V}iew
+	      \begin{itemize}
+	       \item  Variation of MVC pattern 
+	      \end{itemize}
+            \item Focus on reuseability, rapid prototyping and the \emph{DRY}-principle\footnote{\emph{DRY} = Don't repeat yourself}
+            \item Huge amount of out-of-the-box features
+        \end{itemize}
+    \end{frame}
+
+
+    %\begin{frame}{Selected features}
+    %    \begin{itemize}
+    %        \item Integrated web-server for development and testing
+    %        \item Automatic HTML form serialization and validation
+    %        \item HTML generation from parametrized templates (+Template inheritance)
+    %        \item Build-in authentification and admin interface
+    %    \end{itemize}
+    %\end{frame}
+
+    \begin{frame}[fragile]{Architecture of a \django{} Project}
+        \begin{figure}
+            \centering
+            \includegraphics[]{django_project_structure.tikz}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}[fragile]{Operation Principle of a \django{}-App}
+        \begin{figure}
+            \centering
+            \includegraphics[]{django_architecture.tikz}
+        \end{figure}
+    \end{frame}
+
+\subsection{REST}
+
+    \begin{frame}{What is REST?}
+        \textbf{RE}presentational \textbf{S}tate \textbf{T}ransfer\\
+        \begin{itemize}
+            \item Architecture principle for distributed web applications 
+            \item Allow clients to access a textual representation of a ressource on the host
+            \item Set of available operations on the ressources are well-defined by a simple interface
+        \end{itemize}
+        
+        \begin{exampleblock}{Benefit}
+            Easy to parse for machine-to-machine communication. \\
+            Useful for interaction with the \rccce -server.
+        \end{exampleblock}
+
+    \end{frame}
+        
+    \begin{frame}[fragile]{Example for a RESTful API Call}
+        Request:
+        \begin{lstlisting}[style=http]
+        fredo in ~ >  http @GET localhost:8000/rest_api/producers/@
+        \end{lstlisting}
+        
+        Response:
+        \begin{lstlisting}[style=http]
+        HTTP/1.1 200 OK
+        Content-Type: @application/json@
+        @![More http header stuff]!@
+        @[
+            {
+                "id": 1, 
+                "name": "Xilinx"
+            }, 
+            {
+                "id": 2, 
+                "name": "Altera"
+            }, 
+            {
+                "id": 3, 
+                "name": "Intel"
+            }
+        ]@
+        \end{lstlisting}
+    \end{frame}
+
+\section{Data Model}
+
+    \begin{frame}{Preface}
+        The data model is the backbone of the project.
+        \begin{itemize}
+            \item Must be represented by a relational DB
+            \item Fine granularity to improve changeability
+        \end{itemize}
+        
+        \begin{alertblock}{Important!}
+            FPGAs are assumed to be homogenous.
+        \end{alertblock}
+
+        \begin{block}{Note}
+            Multiple development iterations introduced some technical debt.\\
+            But: It can be purged by refactoring cycles.
+        \end{block}
+
+    \end{frame}
+
+    \begin{frame}[fragile, allowframebreaks]{Data Model Details}
+        \begin{figure}
+            \centering
+            \includegraphics[]{data_model_core.tikz}
+        \end{figure}
+        
+    \framebreak
+        \begin{figure}
+            \centering
+            \includegraphics[]{data_model_reservation.tikz}
+        \end{figure}    
+
+    \framebreak
+        \begin{figure}
+            \centering
+            \includegraphics[]{data_model_scripting.tikz}
+        \end{figure}
+        
+    \end{frame}
+
+\section{Selected Issues}
+
+\subsection{User Interaction Concept}
+
+    \begin{frame}[allowframebreaks]{Basic Principle of User Interaction}
+        Boil down all interaction to the following operations:
+        \begin{itemize}
+            \item \emph{List} objects of a type
+            \item \emph{Show} object details
+            \item \emph{Create} objects
+            \item \emph{Delete} objects
+        \end{itemize}
+
+        \begin{block}{Note}
+            Allowing to modify existing objects has severe implications! \\
+            (What happens when you change the region type/ count of an FPGA?)
+        \end{block}
+        
+    \framebreak
+    
+        \begin{alertblock}{Issue}
+            URLs and internal project structure have to consistently represent this principle.
+        \end{alertblock}
+    
+        \begin{alertblock}{Issue}
+            Look and feel of the HTML pages should be uniform.
+        \end{alertblock}
+    
+        \begin{exampleblock}{Solution}
+            Use \django s HTML template inheritance.
+        \end{exampleblock}
+
+        \begin{block}{Note}
+            Even special pages can profit from inheriting layout templates.
+        \end{block}
+    
+    \end{frame}
+    
+    \begin{frame}[fragile]{HTML Template Structure}
+        \begin{figure}
+            \centering
+            \includegraphics[]{html_template_structure.tikz}
+        \end{figure}
+    \end{frame}
+    
+    \begin{frame}{Automating URL-Binding Generation}
+        \begin{alertblock}{Issue}
+            Generating all the URL-bindings for the \emph{List/Show/Create/Delete} pages by hand is tedious and error-prone.
+        \end{alertblock}
+
+        \begin{exampleblock}{Solution}
+            Write generator functions for the common case and only deal with the special cases by hand.
+        \end{exampleblock}
+        
+        \begin{block}{Note}
+            Generator functions also check if the required templates are present.
+        \end{block}
+
+        \tiny{(PS: \url{https://www.xkcd.com/917/})}
+    \end{frame}
+
+\subsection{Supporting Multiple APIs}
+    
+    \begin{frame}[fragile, allowframebreaks]{Supporting Multiple APIs}
+        \begin{alertblock}{Issue}
+            Need to support a REST and a web API
+        \end{alertblock}
+
+        \begin{itemize}
+            \item Both use the same protocol (HTTP/ HTTPS)
+            \item HTTP request types \emph{GET}, \emph{POST} used by web API
+            \item REST will use these as well
+        \end{itemize}
+    
+        How to figure out what to do with an HTTP request?
+     
+        \framebreak
+    
+        \begin{block}{Idea} 
+            Give each API a different URL namespace.
+        \end{block}
+    
+        Web-API:
+        \begin{lstlisting}[style=http]
+            @GET    /web_api/@producers/create/
+            @POST   /web_api/@producers/create/
+        \end{lstlisting}
+    
+        REST-API:
+        \begin{lstlisting}[style=http]
+            @GET    /rest_api/@producers/
+            @POST   /rest_api/@producers/
+            @GET    /rest_api/@producers/1/
+            @DELETE /rest_api/@producers/1/
+        \end{lstlisting}
+    
+        \framebreak
+    
+        \begin{alertblock}{Issue}
+            The REST-framework alters the \django{}-apps structure.
+        \end{alertblock}
+        
+        \begin{exampleblock}{Solution}
+            Split the project into one app per API.
+        \end{exampleblock}
+
+        \begin{alertblock}{Next Issue}
+            Both apps have to operate on the exact same model.
+        \end{alertblock}
+        
+        \begin{exampleblock}{Solution}
+            Split off the model into a separate app as well.
+        \end{exampleblock}
+    
+    \framebreak
+    
+        \begin{figure}
+            \centering
+            \includegraphics[]{modified_project_structure.tikz}
+        \end{figure}
+    
+    \end{frame}
+
+\subsection{Reservation Scheduling}
+    
+    \begin{frame}[fragile, allowframebreaks]{Scheduling of Reservations}
+        \begin{block}{User Input}
+            \begin{itemize}
+                \item Region type
+                \item Region count (consecutive)
+                \item Desired start and end of reservation
+            \end{itemize}
+        \end{block}
+
+    \framebreak
+        
+        \emph{View} generates and issues \texttt{SQL} query from user input.
+        
+        \begin{block}{Database Action}
+            \begin{enumerate}
+                \item Filter for FPGAs with correct region type
+                \item Filter regions without reservation in desired timeframe
+                \item Sort remaining regions by index 
+            \end{enumerate}
+        \end{block}
+        
+        Result type: \texttt{\{FPGA: [Region]\}}
+
+    \framebreak
+        \emph{View} then processes the query result.
+    
+        \begin{block}{Pseudocode}
+         
+        \begin{lstlisting}[style=http]
+            @foreach@ fpga:
+            @!|!@   @foreach@ region:
+            @!|!@   @!|!@   @if@ region is not consecutive:
+            @!|!@   @!|!@   @!|!@   reset markers @!// deal with fragmentation!@
+            @!|!@   @!|!@
+            @!|!@   @!|!@   mark region
+            @!|!@   @!|!@   
+            @!|!@   @!|!@   @if@ enough regions marked:
+            @!|!@   @!|!@   @!|!@   break all @!// Got enough reservation candidates!@
+            @!|!@
+            @!|!@   reset markers @!// Reservations across FPGAs are not allowed!@
+
+            reserve candidates @!// If there are any!@
+            @!// Inform User!@
+        \end{lstlisting}
+
+        \end{block}
+
+     \framebreak
+     
+     \begin{block}{Notes}
+         \begin{itemize}
+             \item \emph{First fit} scheduling does not use ressources equally
+             \item Fragmentation may become an issue in real-life use
+             \item Reservations are not supposed to be deleted (accounting) which may slow down the DB after many reservation cycles 
+         \end{itemize}
+     \end{block}
+     
+     It works for the scale of \rccce{} but has optimization potential.
+        
+    \end{frame}
+
+
+\section{Results and Future Work}
+
+    \begin{frame}{Summary of Current State}
+    
+        \begin{itemize}
+            \item Data model has been developed
+            \item Technology research is completed
+            \item Model is implemented
+            \item Web-API is implemented
+            \item Currently known issues have been solved
+        \end{itemize}
+    
+    \end{frame}
+
+    \begin{frame}{Future Work}
+    
+        Immediate tasks:
+        \begin{itemize}
+            \item Finish transition to new HTML template structure
+            \item Finish implementation of REST-API
+        \end{itemize}
+        
+        Whishlist:
+        \begin{itemize}
+            \item Subsystem for uploading designs, running the FPGA programming scripts and operation feedback
+            \item Subsystem for statistics and accounting
+            \item Logging \rccce{} interactions to DB
+        \end{itemize}
+
+        \begin{block}{Ultimative Goal}
+            Connect the frontend with the live \rccce -system.
+        \end{block}
+     
+    \end{frame}
+
+\appendix
+\section{Appendix}
+
+    \begin{frame}[allowframebreaks]{Further Reading}
+    
+        \begin{block}{\rccce}
+            \emph{RC3E: Reconfigurable Accelerators in Data Centres and Their Provision by Adapted Service Models},
+            Oliver Knodel, Patrick Lehmann, Rainer G. Spallek, 2016\\
+            \url{https://ieeexplore.ieee.org/abstract/document/7820030/}
+            \vspace{1 em}
+        
+            \emph{Rekonfigurierbare Hardwarekomponenten im Kontext von Cloud-Architekturen}, 
+            Dissertation of Oliver Knodel, 2018 \\
+            \color{gray}{Publication pending}
+        \end{block}
+    
+    \framebreak
+    
+        \begin{block}{REST}
+            \emph{Architectural Styles and the Design of Network-based Software Architectures},
+            Dissertation of Roy Fielding, 2000\\
+            \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/fielding_dissertation.pdf}
+        \end{block}
+        
+    \framebreak
+    
+        \begin{block}{\django}
+            \emph{Official Documentation} \\
+            \url{https://docs.djangoproject.com/en/2.0/} \\
+            \vspace{1em}
+            \emph{Django-REST} \\
+            \url{http://www.django-rest-framework.org/}
+        \end{block}
+
+    \end{frame}
+    
+    \begin{frame}{Last Slide}
+        
+        Thank you for your attention. \\
+        Questions?\\
+        
+        \vspace{1em}
+        
+        \begin{tabular}{ll}
+            \textbf{Office:}    & TUD, APB 1095\\
+            \textbf{Phone:}     & TUD-38456 \\
+            \textbf{E-Mail:}    & \href{mailto:fredo.erxleben@tu-dresden.de}{fredo.erxleben@tu-dresden.de} \\
+            \textbf{Project Git:}   & \url{http://github.com/VLSI-EDA/rc3e-manager}
+        \end{tabular}
+
+        \vspace{1em}
+        
+        \footnotesize{PS: We are looking for students to continue working on this project.}\\
+        \vspace{0.5em}
+        \tiny{Bachelor thesis, anyone? ;)}
+        
+    \end{frame}
+
+\end{document}
